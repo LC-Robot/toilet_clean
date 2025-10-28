@@ -8,13 +8,13 @@ import time
 import os
 
 def main():
-    output_dir = '/home/le/perception/toilet_clean/test_results'
+    output_dir = '/home/le/toilet_clean/rubbish_results/薄层纸巾极限测试隔间内垂直0_7m'
     
     os.makedirs(output_dir, exist_ok=True)
     print(f"所有结果将被保存到: {output_dir}")
 
     print("正在加载YOLOv8模型...")
-    model_path = '/home/le/perception/toilet_clean/YOLO/weights/rubbish_v1.pt'
+    model_path = '/home/le/toilet_clean/YOLO/weights/rubbish_v1.pt'
     try:
         model = YOLO(model_path)
     except Exception as e:
@@ -69,6 +69,7 @@ def main():
                 detected_frames = 0
                 confidences_list = []
                 best_frame_info = {'confidence': 0.0, 'image': None, 'box': None, 'label': ''}
+                last_processed_frame = None
                 
                 start_time = time.time()
 
@@ -78,6 +79,8 @@ def main():
                         continue
                     
                     bgr_frame_detect = cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2BGR)
+                    last_processed_frame = bgr_frame_detect
+                    
                     results = model(bgr_frame_detect, verbose=False)
 
                     if results[0].boxes and len(results[0].boxes.conf) > 0:
@@ -119,7 +122,7 @@ def main():
                         cv2.putText(img_to_save, label_text, (x1, y1 - 5), 
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
                         
-                        image_save_path = os.path.join(output_dir, f"test{test_index}_best_confidence.jpg")
+                        image_save_path = os.path.join(output_dir, f"test{test_index}_success_best_confidence.jpg")
                         cv2.imwrite(image_save_path, img_to_save)
                         print(f"第 {test_index} 次测试成功！结果已记录，图片已保存至 '{image_save_path}'")
 
@@ -127,7 +130,12 @@ def main():
                     status = "failure"
                     with open(output_txt_path, "a") as f:
                         f.write(f"test{test_index}\t{status}\tN/A\t\t{inference_time:.4f}\n")
-                    print(f"第 {test_index} 次测试失败，连续5帧未完全检测到目标。")
+                    print(f"第 {test_index} 次测试失败，在5帧中仅检测到 {detected_frames} 帧。")
+
+                    if last_processed_frame is not None:
+                        image_save_path = os.path.join(output_dir, f"test{test_index}_failure_last_frame.jpg")
+                        cv2.imwrite(image_save_path, last_processed_frame)
+                        print(f"失败时的最后一帧图像已保存至 '{image_save_path}'")
                 
                 test_index += 1
 

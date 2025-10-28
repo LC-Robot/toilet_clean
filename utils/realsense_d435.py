@@ -43,7 +43,7 @@ class RealsenseAPI:
                 device = profile.get_device()
                 advnc_mode = rs.rs400_advanced_mode(device)
 
-                json_file_path = "/home/le/perception/toilet_clean/utils/realsense-viewer.json"
+                json_file_path = "/home/le/toilet_clean/utils/realsense-viewer.json"
                 if os.path.exists(json_file_path):
                     with open(json_file_path, 'r') as f:
                         json_obj = json.load(f)
